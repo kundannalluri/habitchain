@@ -1,0 +1,47 @@
+# Environment variables
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+env/
+.venv/
+backend/venv/
+backend/__pycache__/
+backend/*.log
+backend/*.txt
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific temporary files
+out.txt
+err.txt
+trace.txt
+out_cmd.txt
+err_cmd.txt
+err_seed.txt
+debug.log
+debug_trace.log
+trace_err.txt
