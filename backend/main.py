@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -21,11 +22,12 @@ models.Base.metadata.create_all(bind=engine)
 
 @app.post("/token", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = crud.get_user_by_username(db, form_data.username)
+    # Accept username or email
+    user = crud.get_user_by_username_or_email(db, form_data.username)
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = auth.create_access_token(data={"sub": user.username})
@@ -107,15 +109,38 @@ async def read_user_badges(db: Session = Depends(database.get_db), current_user:
 def get_leaderboard(limit: int = 10, db: Session = Depends(database.get_db)):
     return db.query(models.User).order_by(models.User.points.desc()).limit(limit).all()
 
-class PasswordResetRequest(schemas.BaseModel):
-    username: str
+class PasswordResetRequest(BaseModel):
     new_password: str
+    identifier: str = ""  # username or email — only used when NOT authenticated (forgot-password flow)
 
 @app.post("/reset-password")
-def reset_password(payload: PasswordResetRequest, db: Session = Depends(database.get_db)):
-    user = crud.get_user_by_username(db, payload.username)
+def reset_password(
+    payload: PasswordResetRequest,
+    db: Session = Depends(database.get_db),
+    token: str = Depends(auth.oauth2_scheme)
+):
+    """Works in two modes:
+    1. Authenticated (Profile page): uses the JWT token to identify the user.
+    2. Unauthenticated (Forgot Password): uses identifier (username or email).
+    """
+    user = None
+    try:
+        # Try to resolve user from token first
+        from jose import jwt, JWTError
+        payload_data = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        username = payload_data.get("sub")
+        if username:
+            user = crud.get_user_by_username(db, username)
+    except Exception:
+        pass
+
+    # Fallback to identifier if token lookup failed or user not found
+    if not user and payload.identifier:
+        user = crud.get_user_by_username_or_email(db, payload.identifier)
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found. Please check your username or email.")
+
     user.hashed_password = auth.get_password_hash(payload.new_password)
     db.commit()
-    return {"message": "Password reset successfully"}
+    return {"message": "Password changed successfully"}

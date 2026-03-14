@@ -4,7 +4,7 @@ import api from '../../api';
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1); // 1 = username, 2 = new password, 3 = done
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState(''); // username or email
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,8 +13,8 @@ const ForgotPassword = () => {
 
   const handleCheckUsername = (e) => {
     e.preventDefault();
-    if (!username.trim()) {
-      setError('Please enter your username.');
+    if (!identifier.trim()) {
+      setError('Please enter your username or email.');
       return;
     }
     setError('');
@@ -34,10 +34,10 @@ const ForgotPassword = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/reset-password', { username, new_password: newPassword });
+      await api.post('/reset-password', { identifier, new_password: newPassword });
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.detail || 'User not found. Please check your username.');
+      setError(err.response?.data?.detail || 'User not found. Please check your username or email.');
     } finally {
       setLoading(false);
     }
@@ -82,21 +82,21 @@ const ForgotPassword = () => {
           {step === 1 && (
             <>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                What's your username?
+                Who are you?
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                Enter your username and we'll let you set a new password.
+                Enter your <strong style={{color:'var(--text-sub)'}}>username</strong> or <strong style={{color:'var(--text-sub)'}}>email address</strong> to reset your password.
               </p>
               {error && <div style={errorStyle}>{error}</div>}
               <form onSubmit={handleCheckUsername} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label style={labelStyle}>Username</label>
+                  <label style={labelStyle}>Username or Email</label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Enter username or email"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
                     autoFocus
                   />
                 </div>
@@ -113,7 +113,7 @@ const ForgotPassword = () => {
                 Choose a new password
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                Setting a new password for <strong style={{ color: 'var(--text-sub)' }}>{username}</strong>.
+                Setting a new password for <strong style={{ color: 'var(--text-sub)' }}>{identifier}</strong>.
               </p>
               {error && <div style={errorStyle}>{error}</div>}
               <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

@@ -19,7 +19,7 @@ const Login = () => {
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid username or password. Please try again.');
+  setError('Invalid username/email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -73,12 +73,12 @@ const Login = () => {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-sub)', fontWeight: 500 }}>
-                Username
+                Username or Email
               </label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="Enter your username"
+                placeholder="Enter username or email"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
